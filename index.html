@@ -19,11 +19,12 @@
 
     <script>
         let selectedDeviceId = null;
+        let videoDevices = [];
 
         async function getCameras() {
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                videoDevices = devices.filter(device => device.kind === 'videoinput');
                 const select = document.getElementById("cameraSelect");
 
                 select.innerHTML = ""; // Limpa lista
@@ -36,7 +37,7 @@
                 });
 
                 if (videoDevices.length > 0) {
-                    selectedDeviceId = videoDevices[0].deviceId; // Padrão: primeira câmera
+                    selectedDeviceId = videoDevices[0].deviceId; // Define a câmera padrão
                     select.onchange = () => selectedDeviceId = select.value;
                 }
             } catch (err) {
@@ -53,12 +54,16 @@
             const button = document.querySelector("button");
 
             try {
-                const constraints = {
-                    video: {
-                        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-                        facingMode: "environment" // Força a câmera traseira principal
-                    }
+                let constraints = {
+                    video: { facingMode: "environment" } // Força a câmera traseira
                 };
+
+                if (videoDevices.length > 1) {
+                    let backCamera = videoDevices.find(device => device.label.toLowerCase().includes("back"));
+                    if (backCamera) {
+                        constraints.video.deviceId = { exact: backCamera.deviceId };
+                    }
+                }
 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
@@ -104,4 +109,3 @@
     </script>
 </body>
 </html>
-
